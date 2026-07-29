@@ -1,0 +1,11 @@
+{
+  "name": "effect",
+  "title": "Effect TS",
+  "server": "effect-expert",
+  "port": 8801,
+  "url": "http://127.0.0.1:8801/mcp",
+  "source": "/Users/eden.aragon/.graphify/repos/effect-ts/effect",
+  "built_at_commit": "951d06b83d459d3e8fa9024e727a5db1662d3322",
+  "nodes": 27729,
+  "edges": 45530
+}

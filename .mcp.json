@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "graphify": {
+      "command": "/Users/eden.aragon/.local/share/mise/installs/pipx-graphifyy/latest/graphifyy/bin/python",
+      "args": ["-m", "graphify.serve"]
+    }
+  }
+}

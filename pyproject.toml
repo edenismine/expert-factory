@@ -1,0 +1,40 @@
+[project]
+name = "expert-factory"
+version = "0.1.0"
+description = "Compiles a repository into a queryable expert: graph + HTTP MCP server + skill"
+requires-python = ">=3.14"
+# compile.py is stdlib-only. The served runtime's deps live in runtime/requirements.txt,
+# installed by pip inside the container, not here.
+dependencies = []
+
+[dependency-groups]
+# Not needed to run anything: compile.py is stdlib-only and runtime/server.py runs
+# in the container off runtime/requirements.txt. These exist so the type checker can
+# resolve server.py's imports instead of reporting them unresolved. Kept in sync with
+# runtime/requirements.txt by hand; graphifyy without extras skips the tree-sitter
+# grammars, which only the host CLI (installed via mise) needs.
+dev = [
+    "mcp>=1.28,<2",
+    "networkx>=3.4",
+    "graphifyy",
+    "ruff>=0.14",
+]
+
+[tool.uv]
+# Flat layout with loose scripts, nothing importable to build or install.
+package = false
+
+[tool.ruff]
+line-length = 100
+# Not inferred from requires-python: runtime/server.py runs on python:3.13-slim in
+# the container, so it must not be linted against 3.14-only syntax.
+target-version = "py313"
+
+[tool.ruff.lint]
+extend-select = [
+    "I",    # import sorting
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "SIM",  # simplify
+    "RUF",
+]

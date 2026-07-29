@@ -1,0 +1,3 @@
+# mcp 2.0 moved AnyUrl out of mcp.types, which graphify.serve imports.
+mcp>=1.28,<2
+networkx>=3.4
