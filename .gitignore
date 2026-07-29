@@ -9,7 +9,8 @@ wheels/
 # Virtual environments
 .venv
 
-# Compiled expert payloads: upstream clones and multi-MB graphs, both rebuildable
-# from expert.json via `./compile.py build`. The skill and manifest are tracked.
-experts/*/repo/
+# Upstream clones and multi-MB graphs: reconstructible from expert.json's source
+# list. raw/ and notes/ are NOT ignored — fetched content suffers link rot and
+# notes are original work, so neither can be rebuilt.
+experts/*/repos/
 experts/*/graph/

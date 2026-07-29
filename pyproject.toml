@@ -1,34 +1,35 @@
 [project]
 name = "expert-factory"
-version = "0.1.0"
-description = "Compiles a repository into a queryable expert: graph + HTTP MCP server + skill"
-requires-python = ">=3.14"
-# compile.py is stdlib-only. The served runtime's deps live in runtime/requirements.txt,
-# installed by pip inside the container, not here.
-dependencies = []
+version = "0.2.0"
+description = "Builds a queryable expert from a pack of code, docs, papers and notes: graph + stdio MCP server + skill"
+requires-python = ">=3.11"
+# graphifyy[all] carries the whole toolchain: extraction grammars, mcp, networkx,
+# pypdf. One install therefore covers both building and serving, which is what
+# lets a client config say `command: "ef"` with no path or interpreter selection.
+dependencies = ["graphifyy[all]"]
+
+[project.scripts]
+ef = "ef.cli:main"
 
 [dependency-groups]
-# Not needed to run anything: compile.py is stdlib-only and runtime/server.py runs
-# in the container off runtime/requirements.txt. These exist so the type checker can
-# resolve server.py's imports instead of reporting them unresolved. Kept in sync with
-# runtime/requirements.txt by hand; graphifyy without extras skips the tree-sitter
-# grammars, which only the host CLI (installed via mise) needs.
 dev = [
-    "mcp>=1.28,<2",
-    "networkx>=3.4",
-    "graphifyy",
+    "pytest>=8.0",
     "ruff>=0.14",
 ]
 
-[tool.uv]
-# Flat layout with loose scripts, nothing importable to build or install.
-package = false
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ef"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-# Not inferred from requires-python: runtime/server.py runs on python:3.13-slim in
-# the container, so it must not be linted against 3.14-only syntax.
-target-version = "py313"
+target-version = "py311"
 
 [tool.ruff.lint]
 extend-select = [
