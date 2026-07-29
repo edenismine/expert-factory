@@ -9,8 +9,8 @@ wheels/
 # Virtual environments
 .venv
 
-# Upstream clones and multi-MB graphs: reconstructible from expert.json's source
-# list. raw/ and notes/ are NOT ignored — fetched content suffers link rot and
-# notes are original work, so neither can be rebuilt.
-experts/*/repos/
-experts/*/graph/
+# Packs built here are a developer's own workspace, not part of the tool. A pack
+# lives in whatever directory its owner runs `ef` from, and ef scaffolds this same
+# rule there — where raw/ and notes/ are deliberately tracked, since fetched
+# content suffers link rot and notes are original work.
+experts/
