@@ -3,7 +3,8 @@
 Configured entirely by environment so a single image serves any expert:
   EXPERT_NAME   display name
   EXPERT_GRAPH  path to graph.json
-  EXPERT_REPO   path to the source checkout the graph was built from
+  EXPERT_PACK   path to the pack the graph was built from; source_file values in
+                the graph are relative to it, spanning repos/, raw/ and notes/
   EXPERT_PORT   HTTP port (default 8800)
 """
 
@@ -21,7 +22,7 @@ from mcp.server.fastmcp import FastMCP
 
 NAME = os.environ.get("EXPERT_NAME", "expert")
 GRAPH_PATH = Path(os.environ["EXPERT_GRAPH"])
-REPO_ROOT = Path(os.environ["EXPERT_REPO"]).resolve()
+PACK_ROOT = Path(os.environ["EXPERT_PACK"]).resolve()
 PORT = int(os.environ.get("EXPERT_PORT", "8800"))
 
 MAX_LINES = 400
@@ -78,11 +79,11 @@ def resolve_node(graph, ref: str) -> tuple[str, dict] | None:
 
 
 def read_lines(rel_path: str, location: str | None, before: int, after: int) -> dict:
-    target = (REPO_ROOT / rel_path).resolve()
-    if not target.is_relative_to(REPO_ROOT):
-        return {"error": "path escapes the repository root"}
+    target = (PACK_ROOT / rel_path).resolve()
+    if not target.is_relative_to(PACK_ROOT):
+        return {"error": "path escapes the pack root"}
     if not target.is_file():
-        return {"error": f"not present in the checkout: {rel_path}"}
+        return {"error": f"not present in the pack: {rel_path}"}
 
     anchor = 1
     if location:
@@ -186,7 +187,7 @@ def corpus_info() -> dict:
         "nodes": graph.number_of_nodes(),
         "edges": graph.number_of_edges(),
         "built_at_commit": read_build_commit(),
-        "repo_root": str(REPO_ROOT),
+        "pack_root": str(PACK_ROOT),
     }
 
 

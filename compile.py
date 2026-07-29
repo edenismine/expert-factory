@@ -244,10 +244,12 @@ def write_compose() -> None:
             "    environment:",
             f"      EXPERT_NAME: {e['name']}",
             "      EXPERT_GRAPH: /graph/graph.json",
-            "      EXPERT_REPO: /repo",
+            # source_file values are pack-relative, so the whole pack is mounted
+            # rather than a single checkout.
+            "      EXPERT_PACK: /pack",
             f'      EXPERT_PORT: "{e["port"]}"',
             "    volumes:",
-            f"      - ./experts/{e['name']}/repo:/repo:ro",
+            f"      - ./experts/{e['name']}:/pack:ro",
             f"      - ./experts/{e['name']}/graph:/graph:ro",
             "",
         ]

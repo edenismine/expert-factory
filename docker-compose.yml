@@ -8,10 +8,10 @@ services:
     environment:
       EXPERT_NAME: effect
       EXPERT_GRAPH: /graph/graph.json
-      EXPERT_REPO: /repo
+      EXPERT_PACK: /pack
       EXPERT_PORT: "8801"
     volumes:
-      - ./experts/effect/repo:/repo:ro
+      - ./experts/effect:/pack:ro
       - ./experts/effect/graph:/graph:ro
 
   graphify:
@@ -22,8 +22,8 @@ services:
     environment:
       EXPERT_NAME: graphify
       EXPERT_GRAPH: /graph/graph.json
-      EXPERT_REPO: /repo
+      EXPERT_PACK: /pack
       EXPERT_PORT: "8802"
     volumes:
-      - ./experts/graphify/repo:/repo:ro
+      - ./experts/graphify:/pack:ro
       - ./experts/graphify/graph:/graph:ro
