@@ -1,3 +1,28 @@
+## this project
+
+`ef` is an installable CLI in `src/ef/`. It imports graphify as a **library** — no
+shelling out to a `graphify` binary and no interpreter selection, because
+`graphifyy[all]` is a hard dependency so one install satisfies both `import
+graphify` and `import mcp`.
+
+```bash
+uv sync                       # dev install; `ef` lands in .venv/bin
+.venv/bin/python -m pytest -q
+ruff check src tests && ruff format src tests
+```
+
+Two invariants that are easy to break:
+
+- `src/ef/__init__.py` sets `GRAPHIFY_OUT=graph` **before any graphify import**.
+  graphify reads it once at import time and derives its skip-directory set from
+  it, so setting it later would make `graph/` graph itself.
+- `ef run` owns stdout for JSON-RPC framing. Every graphify call in `server.py`
+  is wrapped in `contextlib.redirect_stdout(sys.stderr)`; a stray print corrupts
+  the stream.
+
+Tests drive real entry points and assert on emitted artifacts, never on private
+helper names or call ordering, and none of them spends an LLM token.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
@@ -41,9 +66,9 @@ target with `project_path` (the repo dir column above). Tools: `query_graph`, `g
 `get_neighbors`, `get_community`, `god_nodes`, `graph_stats`, `shortest_path`. The CLI with `--graph` and
 the MCP tools read the same files — use whichever fits; MCP avoids re-reading a 23 MB graph per shell-out.
 
-The `command` is the mise pipx interpreter, because the system `python3` and the `.graphify_python`
-interpreter cannot both import `graphify` and `mcp`. It points at the `latest` symlink so graphify
-upgrades don't break it. Verify with:
+The `command` is the mise pipx interpreter, pointed at the `latest` symlink so graphify upgrades don't
+break it. This is about *graphify's own* MCP server, not `ef`: `ef run` needs no interpreter path
+because `graphifyy[all]` is one of its dependencies. Verify with:
 `"$(head -1 "$(command -v graphify)" | sed 's/^#!//')" -c "import graphify, mcp"`.
 
 Adding a graph is a clone + one-time extract; no config change is needed, just a new table row:
