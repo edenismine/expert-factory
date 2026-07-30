@@ -130,3 +130,27 @@ def test_pull_refuses_a_clone_with_local_modifications(pack: Path) -> None:
 def test_pull_rejects_a_directory_that_is_not_a_checkout(pack: Path) -> None:
     with pytest.raises(EfError, match="not a git checkout"):
         sources.pull(pack, {"path": "raw"})
+
+
+def test_pull_diffs_from_the_rev_the_graph_reflects(pack: Path, git) -> None:
+    """A refresh that pulled but failed to extract must still be recoverable.
+
+    The checkout is already ahead, so diffing from its HEAD would report nothing
+    changed and strand the graph a revision behind forever.
+    """
+    from ef import manifest
+
+    clone = pack / "repos/acme/lib"
+    built_from = manifest.load(pack)["sources"][0]["rev"]
+
+    (clone / "docs/guide.md").write_text("# guide, rewritten\n", encoding="utf-8")
+    git(clone, "add", "-A")
+    git(clone, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "docs")
+    # Already at the tip, so the fetch is a no-op and only the diff base matters.
+    git(clone, "remote", "add", "origin", str(clone))
+
+    result = sources.pull(pack, {"path": "repos/acme/lib", "rev": built_from})
+
+    assert result.before == built_from
+    assert result.moved
+    assert "repos/acme/lib/docs/guide.md" in result.changed

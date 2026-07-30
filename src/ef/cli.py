@@ -219,22 +219,34 @@ def cmd_update(args: argparse.Namespace) -> None:
         return
 
     changed: list[str] = []
+    pulled: list[tuple[dict, str]] = []
     for entry in refreshable:
         result = sources.pull(pack, entry)
-        entry["rev"] = result.after
-        entry["last_synced"] = manifest.now()
+        pulled.append((entry, result.after))
         if result.moved:
             count = len(result.changed)
             say(f"{entry['path']}: {result.before[:7]} -> {result.after[:7]} ({count} file(s))")
         else:
             say(f"{entry['path']}: up to date at {result.after[:7]}")
         changed += result.changed
-    manifest.save(pack, data)
+
+    def record_revs() -> None:
+        """Stamp the pulled revs only once the graph reflects them.
+
+        Saving earlier would make a failed extraction unrecoverable: the manifest
+        would claim a rev the graph was never built from, and the next update would
+        see no changes and skip the work.
+        """
+        for entry, rev in pulled:
+            entry["rev"] = rev
+            entry["last_synced"] = manifest.now()
+        manifest.save(pack, data)
 
     decision = extraction.decide_update_path(changed, force=args.force)
     say(f"path: {decision.kind} — {decision.reason}")
 
     if decision.kind == "noop":
+        record_revs()
         return
 
     if decision.kind == "ast":
@@ -256,6 +268,7 @@ def cmd_update(args: argparse.Namespace) -> None:
         )
         extraction.write_pdf_sidecars(pack)
 
+    record_revs()
     _finish(pack, data, path_taken=decision.kind)
 
 

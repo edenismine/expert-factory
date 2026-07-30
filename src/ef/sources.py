@@ -88,7 +88,13 @@ class Pull:
 
 
 def pull(pack: Path, entry: dict) -> Pull:
-    """Fast-forward one refreshable source, refusing to discard local modifications."""
+    """Fast-forward one refreshable source, refusing to discard local modifications.
+
+    `before` is the rev recorded in the manifest — what the graph was actually built
+    from — not the checkout's current HEAD. Those differ whenever a previous refresh
+    pulled and then failed to extract, and diffing from HEAD would report no changes
+    and strand the graph a revision behind forever.
+    """
     target = pack / entry["path"]
     if not (target / ".git").is_dir():
         raise EfError(f"{entry['path']} is not a git checkout")
@@ -100,7 +106,7 @@ def pull(pack: Path, entry: dict) -> Pull:
             + "\n".join("  " + line for line in dirty.splitlines())
         )
 
-    before = git(target, "rev-parse", "HEAD")
+    before = entry.get("rev") or git(target, "rev-parse", "HEAD")
     git(target, "fetch", "--quiet", "origin")
     merge = subprocess.run(
         ["git", "-C", str(target), "merge", "--ff-only", "--quiet", "FETCH_HEAD"],

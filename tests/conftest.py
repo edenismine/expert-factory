@@ -12,6 +12,12 @@ def git(cwd: Path, *args: str) -> None:
     subprocess.run(["git", "-C", str(cwd), *args], check=True, capture_output=True)
 
 
+@pytest.fixture(name="git")
+def git_fixture():
+    """The same git runner conftest builds packs with, for tests that add commits."""
+    return git
+
+
 @pytest.fixture
 def workspace_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """An empty workspace, with the cwd pointed at it as every verb expects."""
