@@ -7,6 +7,39 @@ import pytest
 from ef import EfError, extraction
 
 
+def captured_argv(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Record the argv extract() hands to graphify's sys.argv-driven CLI branch."""
+    seen: list[str] = []
+
+    def fake_dispatch(argv: list[str], command: str) -> None:
+        seen.extend(argv)
+
+    monkeypatch.setattr(extraction, "_dispatch", fake_dispatch)
+    return seen
+
+
+def test_extraction_never_honors_vcs_ignore_files(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A workspace gitignores its packs, and graphify walks up to the VCS root.
+
+    Left on, the very rule that keeps a pack out of git empties its corpus, and
+    gitignore's parent-exclusion rule means no negation inside the pack wins it back.
+    """
+    argv = captured_argv(monkeypatch)
+    extraction.extract(tmp_path, code_only=False, backend="openai")
+    assert "--no-gitignore" in argv
+
+
+def test_the_cheap_path_also_ignores_vcs_ignore_files(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    argv = captured_argv(monkeypatch)
+    extraction.extract(tmp_path, code_only=True, backend=None)
+    assert "--no-gitignore" in argv
+    assert "--code-only" in argv
+
+
 def test_no_changes_is_a_noop() -> None:
     decision = extraction.decide_update_path([])
     assert decision.kind == "noop"

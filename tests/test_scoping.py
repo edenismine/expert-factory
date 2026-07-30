@@ -62,6 +62,35 @@ def test_regeneration_is_idempotent(tmp_path: Path) -> None:
     assert first == second
 
 
+def test_credentials_are_excluded_from_the_corpus() -> None:
+    """Extraction runs --no-gitignore, so the clone's own rules no longer guard these."""
+    text = scoping.compile_ignore([])
+    for pattern in (".env", ".env.*", "*.pem", "id_rsa", ".npmrc", ".netrc"):
+        assert pattern in text.splitlines()
+
+
+def test_a_stray_credential_never_reaches_the_matcher(tmp_path: Path) -> None:
+    """The guard has to hold under graphify's real matcher, not just as text."""
+    from graphify.detect import _is_ignored, _load_graphifyignore
+
+    pack = (tmp_path / "pack").resolve()
+    clone = pack / "repos/acme/lib"
+    (clone / "certs").mkdir(parents=True)
+    (clone / "src").mkdir()
+
+    secrets = [clone / ".env", clone / ".env.production", clone / "certs/server.pem"]
+    code = clone / "src/index.ts"
+    for path in [*secrets, code]:
+        path.write_text("x", encoding="utf-8")
+
+    scoping.write_ignore(pack, [source("repos/acme/lib")])
+    patterns = _load_graphifyignore(pack, gitignore=False)
+
+    for secret in secrets:
+        assert _is_ignored(secret, pack, patterns), f"{secret.name} must never be extracted"
+    assert not _is_ignored(code, pack, patterns), "ordinary source must still be scanned"
+
+
 def test_the_generated_file_survives_graphifys_own_matcher(tmp_path: Path) -> None:
     """The one place worth crossing the boundary: the semantics are subtle and borrowed."""
     from graphify.detect import _is_ignored, _load_graphifyignore

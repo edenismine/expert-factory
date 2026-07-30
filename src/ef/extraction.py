@@ -124,8 +124,16 @@ def extract(pack: Path, *, code_only: bool, backend: str | None, force: bool = F
     graphify's extract is a sys.argv-driven CLI branch with no callable form, so
     it is invoked by building the argv it parses. GRAPHIFY_OUT is already set to
     the pack's graph directory name by ef's package import.
+
+    `--no-gitignore` is mandatory, not a preference. A pack's whole point is to
+    hold material that is deliberately *not* committed — clones and graphs are
+    reconstructible, so every sane workspace gitignores them, and graphify walks
+    up to the VCS root honoring what it finds. Left on, the ignore rule that keeps
+    a pack out of git also empties its corpus, and gitignore's parent-exclusion
+    rule means no negation inside the pack can win it back. The pack's own
+    generated .graphifyignore is still honored, so per-source scoping survives.
     """
-    argv = ["graphify", "extract", str(pack)]
+    argv = ["graphify", "extract", str(pack), "--no-gitignore"]
     if code_only:
         argv.append("--code-only")
     if backend:

@@ -48,6 +48,15 @@ needs an entry. `ef build` refuses on files with no recorded origin (listing
 them, and suggesting `--adopt-all`) and on entries whose file is gone, because a
 graph that misreports its own coverage is worse than one that fails to build.
 
+Extraction deliberately ignores VCS ignore files. A pack holds material that is
+meant to stay uncommitted, so any sane workspace gitignores `repos/` and
+`graph/` — and since the extractor walks up to the VCS root, honoring those
+rules would let the line that keeps a pack out of git silently empty its corpus.
+The pack's generated `.graphifyignore` still applies, and it restates the
+credential patterns (`.env`, `*.pem`, `id_rsa`, …) that the clone's own
+`.gitignore` would otherwise have covered, so a stray secret is never sent to an
+LLM.
+
 ## Serve a pack
 
 `ef run` is a plain stdio process — no container, port, image, or daemon. It

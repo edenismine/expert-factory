@@ -12,6 +12,29 @@ HEADER = (
     "# metadata out of the corpus it describes.\n"
 )
 
+#: Extraction runs with --no-gitignore (see extraction.extract), so a clone's own
+#: .gitignore no longer keeps a stray credential out of the scan. graphify's
+#: built-in skip set covers build output but not secrets, and semantic extraction
+#: sends file contents to an LLM, so the patterns have to be restated here — a
+#: .graphifyignore can only ever exclude more, never re-include.
+SECRET_PATTERNS = (
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.pfx",
+    "id_rsa",
+    "id_ed25519",
+    ".npmrc",
+    ".pypirc",
+    ".netrc",
+    "credentials",
+    "credentials.*",
+    "*.keystore",
+    ".direnv/",
+)
+
 
 def _scope_rules(source_path: str, paths: list[str]) -> list[str]:
     """Exclude a clone's contents, then re-include the wanted subtrees.
@@ -39,6 +62,9 @@ def compile_ignore(sources: list[dict]) -> str:
     """Render the generated ignore file for a pack's sources."""
     lines = [HEADER.rstrip("\n"), "", "# The pack's own metadata is not corpus content."]
     lines += [f"/{MANIFEST_NAME}", f"/{SKILL_NAME}", f"/{IGNORE_NAME}"]
+
+    lines += ["", "# Never send credentials to an LLM."]
+    lines += list(SECRET_PATTERNS)
 
     for source in sources:
         paths = source.get("paths")
