@@ -9,6 +9,10 @@ wheels/
 # Virtual environments
 .venv
 
+# graphify-out/ is committed (team map) except these local-only pieces
+graphify-out/cost.json
+graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+
 # Machine-specific MCP client config: absolute paths to a local interpreter, so
 # it can never be portable across machines. See CLAUDE.md for how to write one.
 .mcp.json
