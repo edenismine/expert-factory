@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -304,6 +305,40 @@ def cmd_list(args: argparse.Namespace) -> None:
         )
 
 
+def cmd_new(args: argparse.Namespace) -> None:
+    pack = workspace.experts_dir() / args.name
+    if workspace.is_pack(pack):
+        raise EfError(f"{args.name} is already a pack ({pack})")
+    workspace.pack_for_build(args.name)
+    manifest.save(pack, manifest.blank(args.name, args.title))
+    say(f"created {relative_to_cwd(pack)}")
+    say(f"next: ef clone {args.name} <url>, or ef add {args.name} <path-or-url>")
+
+
+def cmd_delete(args: argparse.Namespace) -> None:
+    pack = workspace.resolve_pack(args.name)
+    counts = manifest.irreplaceable_counts(pack)
+
+    if counts and not args.force:
+        detail = ", ".join(f"{n} {layer} file(s)" for layer, n in sorted(counts.items()))
+        raise EfError(
+            f"{args.name} has irreplaceable content that cannot be rebuilt: {detail}. "
+            "Re-run with --force to delete anyway."
+        )
+
+    if counts:
+        detail = " and ".join(f"{n} {layer} file(s)" for layer, n in sorted(counts.items()))
+        reply = input(
+            f"[ef] '{args.name}' has {detail} that cannot be rebuilt. Delete anyway? [y/N] "
+        )
+        if reply.strip().lower() != "y":
+            say("aborted")
+            return
+
+    shutil.rmtree(pack)
+    say(f"deleted {args.name}")
+
+
 def cmd_run(args: argparse.Namespace) -> None:
     from . import server
 
@@ -329,6 +364,11 @@ def parser() -> argparse.ArgumentParser:
             "name", nargs="?", help="pack under ./experts/ (default: the cwd, if it is a pack)"
         )
         return command
+
+    new = sub.add_parser("new", help="scaffold an empty pack")
+    new.add_argument("name", help="pack under ./experts/")
+    new.add_argument("--title", help="human label used in the skill prose")
+    new.set_defaults(func=cmd_new)
 
     clone = with_pack(sub.add_parser("clone", help="clone a git source into a pack"))
     clone.add_argument("url", help="git URL")
@@ -383,6 +423,15 @@ def parser() -> argparse.ArgumentParser:
 
     listing = sub.add_parser("list", help="show every pack in the workspace")
     listing.set_defaults(func=cmd_list)
+
+    delete = sub.add_parser("delete", help="delete a pack")
+    delete.add_argument("name", help="pack under ./experts/")
+    delete.add_argument(
+        "--force",
+        action="store_true",
+        help="delete even if raw/ or notes/ hold content that cannot be rebuilt",
+    )
+    delete.set_defaults(func=cmd_delete)
 
     run = with_pack(sub.add_parser("run", help="serve a pack over stdio for an MCP client"))
     run.set_defaults(func=cmd_run)

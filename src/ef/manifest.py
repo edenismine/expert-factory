@@ -206,6 +206,15 @@ def pack_files(pack: Path) -> list[Path]:
     return found
 
 
+def irreplaceable_counts(pack: Path) -> dict[str, int]:
+    """File counts per reconciled layer (raw/notes) — content `ef delete` cannot rebuild."""
+    counts: dict[str, int] = {}
+    for path in pack_files(pack):
+        layer = path.relative_to(pack).parts[0]
+        counts[layer] = counts.get(layer, 0) + 1
+    return counts
+
+
 @dataclass
 class Reconciliation:
     strays: list[Path] = field(default_factory=list)
