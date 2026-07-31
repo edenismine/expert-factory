@@ -118,7 +118,23 @@ def _is_semantic(path: str) -> bool:
     return Path(path).suffix.lower() in SEMANTIC_SUFFIXES
 
 
-def extract(pack: Path, *, code_only: bool, backend: str | None, force: bool = False) -> None:
+#: graphify defaults to 60k, which packs ~20 heterogeneous files into one request.
+#: The model then answers about a few of them and silently omits the rest: the
+#: response is valid JSON and non-empty, so it trips none of graphify's retry
+#: signals (those fire only on a truncated or wholly hollow response) and the
+#: omitted files are simply absent from the graph. Smaller chunks cost the same
+#: input tokens spread over more calls, and buy coverage that no retry recovers.
+TOKEN_BUDGET = 12_000
+
+
+def extract(
+    pack: Path,
+    *,
+    code_only: bool,
+    backend: str | None,
+    force: bool = False,
+    token_budget: int = TOKEN_BUDGET,
+) -> None:
     """Run graphify's full extraction pipeline over the pack.
 
     graphify's extract is a sys.argv-driven CLI branch with no callable form, so
@@ -138,6 +154,7 @@ def extract(pack: Path, *, code_only: bool, backend: str | None, force: bool = F
     (and re-pays for) every file in the pack on every refresh.
     """
     argv = ["graphify", "extract", str(pack), "--no-gitignore"]
+    argv += ["--token-budget", str(token_budget)]
     if code_only:
         argv.append("--code-only")
     if backend:

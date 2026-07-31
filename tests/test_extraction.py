@@ -57,6 +57,19 @@ def test_forcing_is_the_callers_choice(tmp_path, monkeypatch: pytest.MonkeyPatch
     assert "--force" in argv
 
 
+def test_chunks_stay_small_enough_that_files_are_not_omitted(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """graphify's 60k default packs ~20 files per request and the model answers
+    about only some of them. That response is valid and non-empty, so it trips
+    none of graphify's retry signals and the rest are silently absent."""
+    argv = captured_argv(monkeypatch)
+    extraction.extract(tmp_path, code_only=False, backend="openai")
+    assert "--token-budget" in argv
+    budget = int(argv[argv.index("--token-budget") + 1])
+    assert budget < 60_000
+
+
 def test_no_changes_is_a_noop() -> None:
     decision = extraction.decide_update_path([])
     assert decision.kind == "noop"
