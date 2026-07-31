@@ -2,6 +2,8 @@
 name = "expert-factory"
 version = "0.2.0"
 description = "Builds a queryable expert from a pack of code, docs, papers and notes: graph + stdio MCP server + skill"
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
 # graphifyy[all] carries the whole toolchain: extraction grammars, mcp, networkx,
 # pypdf. One install therefore covers both building and serving, which is what
