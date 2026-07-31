@@ -207,11 +207,23 @@ def pack_files(pack: Path) -> list[Path]:
 
 
 def irreplaceable_counts(pack: Path) -> dict[str, int]:
-    """File counts per reconciled layer (raw/notes) — content `ef delete` cannot rebuild."""
+    """File counts per reconciled layer (raw/notes) — content `ef delete` cannot rebuild.
+
+    Deliberately not `pack_files`: that helper skips dotfiles because a hidden
+    system file (.DS_Store) shouldn't trip stray-file reconciliation, but the same
+    skip here would let a hidden but real file (a dotfile note, a fetched page
+    saved with a leading dot) through the delete guard unseen.
+    """
     counts: dict[str, int] = {}
-    for path in pack_files(pack):
-        layer = path.relative_to(pack).parts[0]
-        counts[layer] = counts.get(layer, 0) + 1
+    output = graph_dir(pack)
+    for layer in RECONCILED_LAYERS:
+        directory = pack / layer
+        if not directory.is_dir():
+            continue
+        for path in directory.rglob("*"):
+            if not path.is_file() or output in path.parents:
+                continue
+            counts[layer] = counts.get(layer, 0) + 1
     return counts
 
 

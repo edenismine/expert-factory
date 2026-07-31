@@ -63,6 +63,22 @@ def test_delete_refuses_raw_or_notes_content_without_force(pack: Path) -> None:
     assert pack.exists()
 
 
+def test_delete_names_the_actual_counts(pack: Path) -> None:
+    with pytest.raises(EfError, match=r"1 note\(s\).*2 raw file\(s\)"):
+        cli.cmd_delete(delete_args("demo"))
+
+
+def test_delete_guards_on_a_dotfile_too(workspace_root: Path) -> None:
+    cli.cmd_new(new_args("demo"))
+    hidden = workspace_root / "experts" / "demo" / "notes" / ".hidden.md"
+    hidden.write_text("secret note\n", encoding="utf-8")
+
+    with pytest.raises(EfError, match="irreplaceable"):
+        cli.cmd_delete(delete_args("demo"))
+
+    assert hidden.exists()
+
+
 def test_delete_prompts_and_aborts_on_no(pack: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("builtins.input", lambda _: "n")
 

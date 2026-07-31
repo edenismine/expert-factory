@@ -315,21 +315,31 @@ def cmd_new(args: argparse.Namespace) -> None:
     say(f"next: ef clone {args.name} <url>, or ef add {args.name} <path-or-url>")
 
 
+#: The noun for one file in a layer — "raw" has no better name than the layer
+#: itself, "notes" is pluralized already so its singular reads as "note".
+_LAYER_NOUN = {"raw": "raw file", "notes": "note"}
+
+
+def _describe_counts(counts: dict[str, int], sep: str) -> str:
+    return sep.join(
+        f"{n} {_LAYER_NOUN.get(layer, layer)}(s)" for layer, n in sorted(counts.items())
+    )
+
+
 def cmd_delete(args: argparse.Namespace) -> None:
     pack = workspace.resolve_pack(args.name)
     counts = manifest.irreplaceable_counts(pack)
 
     if counts and not args.force:
-        detail = ", ".join(f"{n} {layer} file(s)" for layer, n in sorted(counts.items()))
         raise EfError(
-            f"{args.name} has irreplaceable content that cannot be rebuilt: {detail}. "
-            "Re-run with --force to delete anyway."
+            f"{args.name} has irreplaceable content that cannot be rebuilt: "
+            f"{_describe_counts(counts, ', ')}. Re-run with --force to delete anyway."
         )
 
     if counts:
-        detail = " and ".join(f"{n} {layer} file(s)" for layer, n in sorted(counts.items()))
         reply = input(
-            f"[ef] '{args.name}' has {detail} that cannot be rebuilt. Delete anyway? [y/N] "
+            f"[ef] '{args.name}' has {_describe_counts(counts, ' and ')} that cannot be "
+            "rebuilt. Delete anyway? [y/N] "
         )
         if reply.strip().lower() != "y":
             say("aborted")
