@@ -191,9 +191,10 @@ def cmd_build(args: argparse.Namespace) -> None:
     if vision:
         raise EfError(vision)
 
-    data["extraction"] = {"code_only": bool(args.code_only)}
+    extraction_data: dict[str, object] = {"code_only": bool(args.code_only)}
     if backend:
-        data["extraction"]["backend"] = backend
+        extraction_data["backend"] = backend
+    data["extraction"] = extraction_data
     manifest.save(pack, data)
 
     say(
