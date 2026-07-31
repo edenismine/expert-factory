@@ -35,6 +35,18 @@ SECRET_PATTERNS = (
     ".direnv/",
 )
 
+#: Another project's build output, which graphify's own skip set misses because it
+#: only prunes directory names it recognizes. A vendored graph.json is megabytes of
+#: machine-generated node records: it is dispatched as a document, costs real tokens,
+#: and describes a corpus that is not this pack's.
+NOISE_PATTERNS = (
+    "graph.json",
+    "merged-graph.json",
+    "global-graph.json",
+    "GRAPH_REPORT.md",
+    "extraction.json",
+)
+
 
 def _scope_rules(source_path: str, paths: list[str]) -> list[str]:
     """Exclude a clone's contents, then re-include the wanted subtrees.
@@ -65,6 +77,9 @@ def compile_ignore(sources: list[dict]) -> str:
 
     lines += ["", "# Never send credentials to an LLM."]
     lines += list(SECRET_PATTERNS)
+
+    lines += ["", "# Another project's generated graph is not corpus content."]
+    lines += list(NOISE_PATTERNS)
 
     for source in sources:
         paths = source.get("paths")

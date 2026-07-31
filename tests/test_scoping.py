@@ -91,6 +91,34 @@ def test_a_stray_credential_never_reaches_the_matcher(tmp_path: Path) -> None:
     assert not _is_ignored(code, pack, patterns), "ordinary source must still be scanned"
 
 
+def test_a_vendored_graph_is_not_treated_as_corpus(tmp_path: Path) -> None:
+    """A clone that ships its own graph.json would have it dispatched as a document:
+    megabytes of machine-generated node records, paid for in tokens, describing a
+    corpus that is not this pack's."""
+    from graphify.detect import _is_ignored, _load_graphifyignore
+
+    pack = (tmp_path / "pack").resolve()
+    clone = pack / "repos/acme/lib"
+    (clone / "worked/httpx").mkdir(parents=True)
+    (clone / "src").mkdir()
+
+    noise = [
+        clone / "worked/httpx/graph.json",
+        clone / "worked/httpx/GRAPH_REPORT.md",
+        clone / "graph.json",
+    ]
+    code = clone / "src/index.ts"
+    for path in [*noise, code]:
+        path.write_text("{}", encoding="utf-8")
+
+    scoping.write_ignore(pack, [source("repos/acme/lib")])
+    patterns = _load_graphifyignore(pack, gitignore=False)
+
+    for path in noise:
+        assert _is_ignored(path, pack, patterns), f"{path.name} is another project's output"
+    assert not _is_ignored(code, pack, patterns), "ordinary source must still be scanned"
+
+
 def test_the_generated_file_survives_graphifys_own_matcher(tmp_path: Path) -> None:
     """The one place worth crossing the boundary: the semantics are subtle and borrowed."""
     from graphify.detect import _is_ignored, _load_graphifyignore
