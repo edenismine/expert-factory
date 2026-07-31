@@ -103,6 +103,18 @@ modifications), then picks a refresh path and prints which one and why:
 Fetched pages and papers are snapshots with no refresh lifecycle; a changed
 checksum is reported as information, not as a broken pack.
 
+A refresh re-extracts only what changed: graphify's semantic cache is left
+readable, so unchanged files cost nothing the second time. `--force` bypasses
+that cache and rebuilds the whole corpus — correct after changing the backend,
+model or scope, and otherwise just an expensive way to get the same graph.
+
+Both `ef build` and `ef update` then name the communities and rewrite
+`GRAPH_REPORT.md`, because extraction detects communities without naming them
+and never writes the report — skipping it would leave the pack describing a
+graph that no longer exists. The first labeling pass spends a few LLM calls;
+later ones reuse the saved names and only rename communities whose membership
+actually changed.
+
 ## Layout
 
 - `src/ef/` — `workspace` (cwd-based pack resolution), `manifest`, `scoping`,
