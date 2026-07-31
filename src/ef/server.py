@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import contextlib
 import sys
+from importlib import metadata
 from pathlib import Path
 from typing import cast
 
@@ -131,11 +132,13 @@ def build_server(pack: Path, data: dict):
     from graphify import serve as _g
     from graphify.build import edge_data
     from graphify.security import sanitize_label
-    from mcp.server.fastmcp import FastMCP
+    from mcp.server.mcpserver import MCPServer
 
     handle = GraphHandle(graph_json(pack))
     name = data.get("name", pack.name)
-    mcp = FastMCP(f"{name}-expert")
+    # version is explicit because MCPServer defaults it to "", where FastMCP used
+    # to fill in the SDK's own version; a client reads this in the handshake.
+    mcp = MCPServer(f"{name}-expert", version=metadata.version("expert-factory"))
 
     @mcp.tool()
     def search(question: str, mode: str = "bfs", depth: int = 3, token_budget: int = 2000) -> str:
@@ -233,7 +236,9 @@ def serve(pack: Path) -> None:
     preflight(pack)
     data = load(pack)
     # graphify's import-time and wiring chatter would land on stdout and corrupt
-    # the JSON-RPC framing. Only FastMCP itself may own stdout.
+    # the JSON-RPC framing. Only the transport itself may own stdout, and it must
+    # claim the real fd 1: it serves the wire from a private duplicate and points
+    # fd 1 at stderr, so run() has to stay outside this redirect.
     with contextlib.redirect_stdout(sys.stderr):
         server = build_server(pack, data)
     server.run(transport="stdio")

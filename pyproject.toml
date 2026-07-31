@@ -8,7 +8,11 @@ requires-python = ">=3.11"
 # graphifyy[all] carries the whole toolchain: extraction grammars, mcp, networkx,
 # pypdf. One install therefore covers both building and serving, which is what
 # lets a client config say `command: "ef"` with no path or interpreter selection.
-dependencies = ["graphifyy[all]"]
+#
+# mcp is pinned to 2.x directly because graphifyy asks only for <3,>=1, a range
+# spanning two majors: server.py uses mcp.server.mcpserver, which exists only in
+# 2.x, so resolving to 1.x builds an `ef` whose serve path cannot import.
+dependencies = ["graphifyy[all]", "mcp>=2,<3"]
 
 [project.scripts]
 ef = "ef.cli:main"
