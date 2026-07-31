@@ -58,6 +58,15 @@ def test_forcing_a_refresh_bypasses_the_cache(moved_pack: Path, monkeypatch) -> 
     assert "--force" in extract
 
 
+def test_a_refresh_leaves_no_report_describing_the_old_graph(moved_pack: Path, monkeypatch) -> None:
+    """extract detects communities but never names them or writes GRAPH_REPORT.md,
+    so without a clustering pass the pack keeps the previous build's report."""
+    monkeypatch.chdir(moved_pack)
+    commands = [argv[1] for argv in run_update(monkeypatch)]
+
+    assert commands == ["extract", "cluster-only"]
+
+
 def test_a_refresh_records_the_rev_it_built_from(moved_pack: Path, monkeypatch) -> None:
     monkeypatch.chdir(moved_pack)
     before = manifest.load(moved_pack)["sources"][0]["rev"]

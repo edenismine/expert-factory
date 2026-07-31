@@ -164,6 +164,23 @@ def extract(
     _dispatch(argv, "extract")
 
 
+def cluster(pack: Path, backend: str | None) -> None:
+    """Name the communities and regenerate GRAPH_REPORT.md.
+
+    graphify's extract writes graph.json with communities detected but unnamed,
+    and never writes the report, so without this step the pack keeps whatever
+    report an earlier build left — describing a graph that no longer exists.
+
+    Costs a few LLM calls (one per batch of 100 communities) the first time a
+    pack is labeled. Later runs reuse the saved labels and only rename the
+    communities whose membership actually changed, for free.
+    """
+    argv = ["graphify", "cluster-only", str(pack), "--no-viz"]
+    if backend:
+        argv += ["--backend", backend]
+    _dispatch(argv, "cluster-only")
+
+
 def update_ast(pack: Path) -> None:
     """graphify's AST-only incremental update. Makes no LLM calls."""
     from graphify.watch import _rebuild_code

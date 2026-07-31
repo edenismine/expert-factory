@@ -70,6 +70,25 @@ def test_chunks_stay_small_enough_that_files_are_not_omitted(
     assert budget < 60_000
 
 
+def test_clustering_names_communities_and_writes_the_report(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """extract leaves communities unnamed and never writes the report, so without
+    this the pack keeps a report describing a graph that no longer exists."""
+    argv = captured_argv(monkeypatch)
+    extraction.cluster(tmp_path, "openai")
+    assert argv[:2] == ["graphify", "cluster-only"]
+    assert argv[argv.index("--backend") + 1] == "openai"
+
+
+def test_clustering_without_a_backend_names_no_backend(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    argv = captured_argv(monkeypatch)
+    extraction.cluster(tmp_path, None)
+    assert "--backend" not in argv
+
+
 def test_no_changes_is_a_noop() -> None:
     decision = extraction.decide_update_path([])
     assert decision.kind == "noop"

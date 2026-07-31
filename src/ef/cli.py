@@ -205,6 +205,9 @@ def cmd_build(args: argparse.Namespace) -> None:
     if sidecars:
         say(f"wrote {len(sidecars)} PDF text sidecar(s)")
 
+    say("naming communities and writing the graph report")
+    extraction.cluster(pack, backend)
+
     _finish(pack, data, path_taken="code-only" if args.code_only else f"semantic/{backend}")
     report_snippet(pack, data["name"])
 
@@ -267,6 +270,8 @@ def cmd_update(args: argparse.Namespace) -> None:
             force=args.force,
         )
         extraction.write_pdf_sidecars(pack)
+        say("naming communities and writing the graph report")
+        extraction.cluster(pack, backend)
 
     record_revs()
     _finish(pack, data, path_taken=decision.kind)
