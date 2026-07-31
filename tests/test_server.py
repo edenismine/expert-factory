@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
 import pytest
 
-from ef import EfError, extraction, server
+from ef import EfError, cli, extraction, server
 
 
 def build_graph(pack: Path) -> None:
@@ -16,11 +17,25 @@ def build_graph(pack: Path) -> None:
 
 
 def test_preflight_rejects_a_non_pack_directory(tmp_path: Path) -> None:
-    """A bad cwd in a client config has to be diagnosable, not a silent failed handshake."""
+    """Being spawned in the wrong directory has to be diagnosable, not a silent failed handshake."""
     with pytest.raises(EfError) as caught:
         server.preflight(tmp_path)
 
     assert "expert.json" in str(caught.value)
+    assert "exec ef run" in str(caught.value)
+
+
+def test_run_in_a_non_pack_directory_names_the_working_mount(
+    workspace_root: Path, monkeypatch
+) -> None:
+    """The path a misconfigured client actually hits: `ef run` with no name, spawned anywhere."""
+    monkeypatch.chdir(workspace_root)
+    args = argparse.Namespace(name=None)
+
+    with pytest.raises(EfError) as caught:
+        cli.cmd_run(args)
+
+    assert "exec ef run" in str(caught.value)
     assert "cwd" in str(caught.value)
 
 

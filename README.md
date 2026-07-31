@@ -60,24 +60,26 @@ LLM.
 ## Serve a pack
 
 `ef run` is a plain stdio process — no container, port, image, or daemon. It
-writes nothing and validates the pack before the MCP handshake, so a wrong `cwd`
-fails with a readable message instead of a dead transport.
+writes nothing and validates the pack before the MCP handshake, so being spawned
+in the wrong directory fails with a readable message instead of a dead transport.
 
 ```json
 {
   "mcpServers": {
     "research expert": {
-      "command": "ef",
-      "args": ["run"],
-      "cwd": "/abs/path/to/experts/research"
+      "command": "sh",
+      "args": ["-c", "cd /abs/path/to/experts/research && exec ef run"]
     }
   }
 }
 ```
 
-The pack is addressed by `cwd`, so moving or copying it only changes that one
-line. Copy its `SKILL.md` to `~/.claude/skills/<name>-expert/SKILL.md` (or the
-consuming project's `.claude/skills/`).
+The `cd` is the shell's job, not a `cwd` key: Claude Code ignores `cwd` on a
+stdio server and spawns the process wherever the client was launched, where
+`ef run` would find no manifest and exit. The pack is addressed by that one
+path, so moving or copying it only changes that line. Copy its `SKILL.md` to
+`~/.claude/skills/<name>-expert/SKILL.md` (or the consuming project's
+`.claude/skills/`).
 
 Tools: `search` (graph traversal), `read_source` (real text behind a node —
 code, a fetched page, a paper, or a note), `neighbors` (callers, imports,

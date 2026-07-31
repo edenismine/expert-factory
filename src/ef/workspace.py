@@ -51,8 +51,8 @@ def graph_json(pack: Path) -> Path:
 def resolve_pack(name: str | None, root: Path | None = None) -> Path:
     """Resolve a pack directory from a name, or from the cwd when name is None.
 
-    No upward search: a client config states an exact `cwd`, and walking up would
-    let a stray parent manifest capture a subdirectory silently.
+    No upward search: a client config names an exact directory, and walking up
+    would let a stray parent manifest capture a subdirectory silently.
     """
     root = root or workspace_root()
     if name is None:

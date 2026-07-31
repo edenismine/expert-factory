@@ -79,26 +79,34 @@ def test_the_skill_is_written_with_frontmatter(tmp_path: Path) -> None:
 # the client-config snippet
 
 
-def test_the_snippet_mounts_the_pack_by_cwd(tmp_path: Path) -> None:
+def test_the_snippet_changes_directory_in_the_shell(tmp_path: Path) -> None:
+    """Claude Code ignores a `cwd` key, so the shell has to cd before exec'ing ef."""
     entry = json.loads(cli.client_snippet(tmp_path, "effect"))
     (config,) = entry.values()
 
-    assert config["command"] == "ef"
-    assert config["args"] == ["run"]
-    assert config["cwd"] == str(tmp_path.resolve())
+    assert config["command"] == "sh"
+    assert config["args"] == ["-c", f"cd {tmp_path.resolve()} && exec ef run"]
+    assert "cwd" not in config
 
 
-def test_the_snippet_cwd_is_absolute(pack: Path, monkeypatch) -> None:
-    """A client resolves cwd against its own working directory, not the workspace."""
+def test_the_snippet_path_is_absolute(pack: Path, monkeypatch) -> None:
+    """A client spawns the server from its own working directory, not the workspace."""
     monkeypatch.chdir(pack)
-    entry = json.loads(cli.client_snippet(Path("."), "demo"))
-    (config,) = entry.values()
+    (config,) = json.loads(cli.client_snippet(Path("."), "demo")).values()
 
-    assert Path(config["cwd"]).is_absolute()
-    assert config["cwd"] == str(pack.resolve())
+    assert f"cd {pack.resolve()} " in config["args"][1]
+
+
+def test_the_snippet_quotes_a_path_holding_spaces(tmp_path: Path) -> None:
+    """An unquoted cd would split the path and strand the server in the wrong place."""
+    pack = tmp_path / "my experts" / "effect"
+    pack.mkdir(parents=True)
+    (config,) = json.loads(cli.client_snippet(pack, "effect")).values()
+
+    assert f"'{pack.resolve()}'" in config["args"][1]
 
 
 def test_the_snippet_names_no_port_or_url(tmp_path: Path) -> None:
-    """A stdio server is addressed by its cwd; there is no port, url, or transport type."""
+    """A stdio server is spawned as a child process; there is no port, url, or transport type."""
     (config,) = json.loads(cli.client_snippet(tmp_path, "effect")).values()
-    assert set(config) == {"command", "args", "cwd"}
+    assert set(config) == {"command", "args"}

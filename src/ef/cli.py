@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import shutil
 import sys
 from pathlib import Path
@@ -34,16 +35,16 @@ def relative_to_cwd(path: Path) -> Path | str:
 def client_snippet(pack: Path, name: str) -> str:
     """The MCP client config entry for a pack.
 
-    `args: ["run"]` with the pack as `cwd` — rather than `["run", <name>]` with the
-    workspace as cwd — keeps the pack self-describing: move or copy it and only
-    `cwd` changes. `cwd` is absolute because a client resolves it against its own
-    working directory, not the workspace.
+    The directory is changed by the shell rather than by a `cwd` key: Claude Code
+    ignores `cwd` on a stdio server and spawns the process in whatever directory
+    the client was launched from, so `ef run` would look for a manifest there and
+    exit before the handshake. The path is absolute because the client resolves it
+    against its own working directory, not the workspace.
     """
     entry = {
         f"{name} expert": {
-            "command": "ef",
-            "args": ["run"],
-            "cwd": str(pack.resolve()),
+            "command": "sh",
+            "args": ["-c", f"cd {shlex.quote(str(pack.resolve()))} && exec ef run"],
         }
     }
     return json.dumps(entry, indent=2)
@@ -352,6 +353,14 @@ def cmd_delete(args: argparse.Namespace) -> None:
 def cmd_run(args: argparse.Namespace) -> None:
     from . import server
 
+    # A failed handshake shows the client almost nothing, so the usual "run from
+    # inside a pack" hint is replaced by the mount that actually works.
+    if args.name is None and not workspace.is_pack(workspace.workspace_root()):
+        raise EfError(
+            f"{workspace.workspace_root()} is not a pack: no {workspace.MANIFEST_NAME}. "
+            f"The server was spawned in the wrong directory; mount it with "
+            f"`sh -c 'cd <pack> && exec ef run'`, since Claude Code ignores a `cwd` key."
+        )
     pack = workspace.resolve_pack(args.name)
     server.serve(pack)
 

@@ -29,11 +29,13 @@ def preflight(pack: Path) -> Path:
     """Validate the pack before the transport starts.
 
     A failed MCP handshake gives a client almost nothing to report, so a wrong
-    `cwd` or an unbuilt pack has to fail loudly here instead.
+    working directory or an unbuilt pack has to fail loudly here instead.
     """
     if not is_pack(pack):
         raise EfError(
-            f"{pack} is not a pack: no {MANIFEST_NAME}. Check the `cwd` in your MCP client config."
+            f"{pack} is not a pack: no {MANIFEST_NAME}. The server was spawned in the wrong "
+            f"directory; mount it with `sh -c 'cd <pack> && exec ef run'`, since Claude Code "
+            f"ignores a `cwd` key on a stdio server."
         )
     graph = graph_json(pack)
     if not graph.is_file():
