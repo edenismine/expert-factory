@@ -132,6 +132,10 @@ def extract(pack: Path, *, code_only: bool, backend: str | None, force: bool = F
     a pack out of git also empties its corpus, and gitignore's parent-exclusion
     rule means no negation inside the pack can win it back. The pack's own
     generated .graphifyignore is still honored, so per-source scoping survives.
+
+    `force` is the caller's to decide and defaults off, because graphify reads it
+    as "skip the semantic cache read" — passing it unconditionally re-dispatches
+    (and re-pays for) every file in the pack on every refresh.
     """
     argv = ["graphify", "extract", str(pack), "--no-gitignore"]
     if code_only:

@@ -40,6 +40,23 @@ def test_the_cheap_path_also_ignores_vcs_ignore_files(
     assert "--code-only" in argv
 
 
+def test_extraction_does_not_force_by_default(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """graphify reads --force as "skip the semantic cache read".
+
+    Passing it unconditionally re-dispatches every file in the pack on every
+    refresh, so a one-file change re-pays for the whole corpus.
+    """
+    argv = captured_argv(monkeypatch)
+    extraction.extract(tmp_path, code_only=False, backend="openai")
+    assert "--force" not in argv
+
+
+def test_forcing_is_the_callers_choice(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    argv = captured_argv(monkeypatch)
+    extraction.extract(tmp_path, code_only=False, backend="openai", force=True)
+    assert "--force" in argv
+
+
 def test_no_changes_is_a_noop() -> None:
     decision = extraction.decide_update_path([])
     assert decision.kind == "noop"

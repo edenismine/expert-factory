@@ -264,7 +264,7 @@ def cmd_update(args: argparse.Namespace) -> None:
             pack,
             code_only=data.get("extraction", {}).get("code_only", False),
             backend=backend,
-            force=True,
+            force=args.force,
         )
         extraction.write_pdf_sidecars(pack)
 
@@ -349,7 +349,11 @@ def parser() -> argparse.ArgumentParser:
         help="AST only, no LLM cost. Drops docs, papers and images from the semantic pass.",
     )
     build.add_argument("--backend", help="LLM backend for semantic extraction")
-    build.add_argument("--force", action="store_true", help="re-extract even if a graph exists")
+    build.add_argument(
+        "--force",
+        action="store_true",
+        help="re-extract every file, ignoring the semantic cache and the incremental gate",
+    )
     build.add_argument(
         "--adopt-all",
         action="store_true",
@@ -359,7 +363,11 @@ def parser() -> argparse.ArgumentParser:
 
     update = with_pack(sub.add_parser("update", help="pull git sources and refresh the graph"))
     update.add_argument("--backend", help="LLM backend, if a semantic re-extract is needed")
-    update.add_argument("--force", action="store_true", help="re-extract even if nothing changed")
+    update.add_argument(
+        "--force",
+        action="store_true",
+        help="re-extract from scratch even if nothing changed, ignoring the semantic cache",
+    )
     update.set_defaults(func=cmd_update)
 
     sync = with_pack(
