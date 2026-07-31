@@ -9,6 +9,10 @@ wheels/
 # Virtual environments
 .venv
 
+# Machine-specific MCP client config: absolute paths to a local interpreter, so
+# it can never be portable across machines. See CLAUDE.md for how to write one.
+.mcp.json
+
 # Packs built here are a developer's own workspace, not part of the tool. A pack
 # lives in whatever directory its owner runs `ef` from, and ef scaffolds this same
 # rule there — where raw/ and notes/ are deliberately tracked, since fetched
